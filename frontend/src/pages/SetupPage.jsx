@@ -111,6 +111,18 @@ export default function SetupPage({ onConfigured }) {
   const [testResult, setTestResult] = useState(null);
   const [testType, setTestType] = useState('pmd');
 
+  const [isConfigured, setIsConfigured] = useState(false);
+
+  // Pre-fill saved config
+  useEffect(() => {
+    fetch('/api/config').then(r => r.json()).then(cfg => {
+      if (cfg.postalCode) setPostalCode(cfg.postalCode);
+      if (cfg.houseNumber) setHouseNumber(cfg.houseNumber);
+      if (cfg.notificationMode) setNotificationMode(cfg.notificationMode);
+      if (cfg.postalCode && cfg.houseNumber && cfg.token) setIsConfigured(true);
+    }).catch(() => {});
+  }, []);
+
   const clearMessages = () => { setError(null); setMessage(null); };
 
   // ---------- Step 0: Discover hub ----------
@@ -269,7 +281,22 @@ export default function SetupPage({ onConfigured }) {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <div style={styles.title}>Trash Day Reminder instellen</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={styles.title}>Trash Day Reminder instellen</div>
+          {isConfigured && (
+            <button
+              onClick={() => navigate('/')}
+              title="Sluiten"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 22, color: '#aaa', lineHeight: 1, padding: 4,
+                borderRadius: 6, display: 'flex', alignItems: 'center',
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <div style={styles.subtitle}>Volg de stappen om de app te configureren.</div>
 
         <div style={styles.stepBar}>

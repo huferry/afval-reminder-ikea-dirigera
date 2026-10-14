@@ -13,8 +13,20 @@ const TYPE_COLORS = {
 
 const LABELS = { pmd: 'PMD afval', papier: 'Papier afval', gft: 'GFT afval', rest: 'Restafval', other: 'Overig afval' };
 
+const RESPONSIVE_CSS = `
+  .td-main { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto; }
+  .td-calendar { display: block; }
+  .td-footer { max-width: 900px; margin: 20px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  @media (max-width: 600px) {
+    .td-main { grid-template-columns: 1fr; }
+    .td-calendar { display: none; }
+    .td-panel-modes { flex-direction: column; }
+    .td-footer { flex-direction: column; align-items: flex-start; }
+  }
+`;
+
 const s = {
-  page: { minHeight: '100vh', background: '#f0f4f8', padding: '24px 16px' },
+  page: { minHeight: '100vh', background: '#f0f4f8', padding: '24px 16px', maxWidth: '100vw', overflowX: 'hidden' },
   header: {
     maxWidth: 900, margin: '0 auto 20px',
     display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12,
@@ -24,10 +36,7 @@ const s = {
     background: '#fff', borderRadius: 8, padding: '6px 14px',
     fontSize: 14, color: '#555', boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
   },
-  main: {
-    maxWidth: 900, margin: '0 auto',
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20,
-  },
+  main: {}, // handled by .td-main CSS class
   notifBanner: (color) => ({
     maxWidth: 900, margin: '0 auto 16px', background: color, color: '#fff',
     borderRadius: 10, padding: '14px 20px',
@@ -227,6 +236,7 @@ export default function StatusPage() {
 
   return (
     <div style={s.page}>
+      <style>{RESPONSIVE_CSS}</style>
       {/* Header */}
       <div style={s.header}>
         <div style={s.title}>Afvalkalender</div>
@@ -255,17 +265,17 @@ export default function StatusPage() {
       )}
 
       {/* Main grid */}
-      <div style={s.main}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div className="td-main">
+        <div className="td-calendar">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, height: 32 }}>
             <button onClick={prevMonth} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#555' }}>‹</button>
             <span />
             <button onClick={nextMonth} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#555' }}>›</button>
           </div>
           <Calendar year={viewYear} month={viewMonth} schedule={schedule} />
         </div>
-        <div>
-          <TrashList schedule={schedule} />
+        <div style={{ paddingTop: 42, display: 'flex', flexDirection: 'column' }}>
+          <TrashList schedule={schedule} fillHeight />
         </div>
       </div>
 
@@ -299,7 +309,7 @@ export default function StatusPage() {
 
             <div style={{ marginTop: 14 }}>
               <span style={s.label}>Meldingsmodus</span>
-              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <div className="td-panel-modes" style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                 {[
                   { value: 'rgb', label: 'RGB kleur', sub: 'Oranje / blauw / groen' },
                   { value: 'colortemp', label: 'Warm/koel wit', sub: 'Warmst / koel / midden' },
@@ -369,7 +379,7 @@ export default function StatusPage() {
       </div>
 
       {/* Footer */}
-      <div style={s.footer}>
+      <div className="td-footer" style={s.footer}>
         <div style={s.legend}>
           {['pmd', 'papier', 'gft', 'rest'].map(type => (
             <div key={type} style={s.legendItem}>

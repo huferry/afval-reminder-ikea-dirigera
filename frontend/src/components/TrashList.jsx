@@ -26,7 +26,7 @@ function daysUntil(dateStr) {
   return Math.round((target - today) / (1000 * 60 * 60 * 24));
 }
 
-export default function TrashList({ schedule }) {
+export default function TrashList({ schedule, fillHeight }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split('T')[0];
@@ -44,7 +44,7 @@ export default function TrashList({ schedule }) {
   }
 
   const styles = {
-    wrapper: { background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+    wrapper: { background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...(fillHeight && { flex: 1 }) },
     title: { fontWeight: 700, fontSize: 16, marginBottom: 14 },
     item: (bg) => ({
       display: 'flex',

@@ -59,35 +59,33 @@ async function activateNotification(wasteType, testMode = false) {
   const color = COLORS[wasteType] || COLORS.other;
   const mode = config.notificationMode || 'onoff'; // 'rgb' | 'colortemp' | 'onoff'
 
-  // Build attributes to set
-  const attributes = { isOn: true, lightLevel: 80 };
-
-  if (mode === 'rgb') {
-    attributes.colorHue = color.hue;
-    attributes.colorSaturation = color.saturation;
-  } else if (mode === 'colortemp') {
-    // Need device info for min/max color temp
+  if (mode === 'colortemp') {
+    // Dirigera ignores colorTemperature when isOn is in the same PATCH.
+    // Send isOn first, then colorTemperature + lightLevel separately.
     const device = await getDevice(config.hubUrl, config.token, lightId);
     const attrs = device.attributes || {};
-    // Dirigera's colorTemperatureMin/Max labels are inverted vs Kelvin:
-    // colorTemperatureMin = 4000 (cool/high Kelvin), colorTemperatureMax = 2202 (warm/low Kelvin)
-    // Use actual Kelvin min/max to get warm (low K) and cool (high K) ends.
+    // Dirigera's Min/Max labels are inverted vs Kelvin:
+    // colorTemperatureMin = high Kelvin (cool), colorTemperatureMax = low Kelvin (warm)
     const rawA = attrs.colorTemperatureMin || 2202;
     const rawB = attrs.colorTemperatureMax || 4000;
-    const warmTemp = Math.min(rawA, rawB); // lowest Kelvin = warmest
-    const coolTemp = Math.max(rawA, rawB); // highest Kelvin = coolest
+    const warmTemp = Math.min(rawA, rawB);
+    const coolTemp = Math.max(rawA, rawB);
     const midTemp = Math.round((warmTemp + coolTemp) / 2);
-    if (wasteType === 'pmd') {
-      attributes.colorTemperature = warmTemp;
-    } else if (wasteType === 'papier') {
-      attributes.colorTemperature = coolTemp;
-    } else {
-      attributes.colorTemperature = midTemp;
-    }
-  }
-  // 'onoff': just isOn + lightLevel, already set
+    let colorTemperature;
+    if (wasteType === 'pmd') colorTemperature = warmTemp;
+    else if (wasteType === 'papier') colorTemperature = coolTemp;
+    else colorTemperature = midTemp;
 
-  await patchDevice(config.hubUrl, config.token, lightId, attributes);
+    await patchDevice(config.hubUrl, config.token, lightId, { isOn: true });
+    await patchDevice(config.hubUrl, config.token, lightId, { colorTemperature, lightLevel: 80 });
+  } else {
+    const attributes = { isOn: true, lightLevel: 80 };
+    if (mode === 'rgb') {
+      attributes.colorHue = color.hue;
+      attributes.colorSaturation = color.saturation;
+    }
+    await patchDevice(config.hubUrl, config.token, lightId, attributes);
+  }
 
   activeNotification = {
     wasteType,
