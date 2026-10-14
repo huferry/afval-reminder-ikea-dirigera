@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  trash-day:
+    build: .
+    container_name: trash-day-reminder
+    ports:
+      - "3001:3001"
+    volumes:
+      - trash-day-data:/data
+    environment:
+      - NODE_ENV=production
+      - CONFIG_PATH=/data/config.json
+      - TZ=Europe/Amsterdam
+    restart: unless-stopped
+    network_mode: host  # needed for mDNS discovery of Dirigera on local network
+
+volumes:
+  trash-day-data:
+    driver: local
