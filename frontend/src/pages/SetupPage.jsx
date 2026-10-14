@@ -105,6 +105,7 @@ export default function SetupPage({ onConfigured }) {
   // Step 3: Light
   const [lights, setLights] = useState([]);
   const [selectedLightId, setSelectedLightId] = useState('');
+  const [notificationMode, setNotificationMode] = useState('rgb');
 
   // Step 4: Test
   const [testResult, setTestResult] = useState(null);
@@ -233,6 +234,7 @@ export default function SetupPage({ onConfigured }) {
         roomName: selectedLight ? selectedLight.room : '',
         lightName: selectedLight ? selectedLight.name : '',
         lightId: selectedLightId,
+        notificationMode,
       };
 
       const res = await fetch('/api/setup/save', {
@@ -376,17 +378,36 @@ export default function SetupPage({ onConfigured }) {
                   {lights.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.room ? `${l.room} — ` : ''}{l.name}
-                      {l.capabilities.isRgb ? ' (RGB)' : l.capabilities.hasColorTemp ? ' (wit)' : ' (aan/uit)'}
                     </option>
                   ))}
                 </select>
-                {selectedLight && (
-                  <div style={styles.info}>
-                    Geselecteerd: <strong>{selectedLight.name}</strong> in kamer <strong>{selectedLight.room}</strong>
-                    <br />
-                    Mogelijkheden: {selectedLight.capabilities.isRgb ? 'RGB kleuren' : selectedLight.capabilities.hasColorTemp ? 'Kleurtemperatuur' : 'Aan/uit'}
-                  </div>
-                )}
+
+                <label style={{ ...styles.label, marginTop: 8 }}>Meldingsmodus</label>
+                {[
+                  { value: 'rgb', label: 'RGB kleur', desc: 'Oranje (PMD), blauw (Papier), groen (GFT)' },
+                  { value: 'colortemp', label: 'Warm/koel wit', desc: 'Warmst (PMD), koel (Papier), midden (GFT)' },
+                  { value: 'onoff', label: 'Aan/uit', desc: 'Lamp gaat gewoon aan' },
+                ].map((opt) => (
+                  <label key={opt.value} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10,
+                    padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+                    border: `1.5px solid ${notificationMode === opt.value ? '#3498db' : '#ddd'}`,
+                    background: notificationMode === opt.value ? '#eaf4fb' : '#fff',
+                  }}>
+                    <input
+                      type="radio"
+                      name="notificationMode"
+                      value={opt.value}
+                      checked={notificationMode === opt.value}
+                      onChange={() => setNotificationMode(opt.value)}
+                      style={{ marginTop: 2, accentColor: '#3498db' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{opt.label}</div>
+                      <div style={{ fontSize: 13, color: '#777' }}>{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
               </>
             )}
           </div>

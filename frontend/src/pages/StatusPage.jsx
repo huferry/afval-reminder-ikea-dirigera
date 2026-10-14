@@ -103,6 +103,7 @@ export default function StatusPage() {
   const [lights, setLights] = useState([]);
   const [lightsLoading, setLightsLoading] = useState(false);
   const [selectedLightId, setSelectedLightId] = useState('');
+  const [notificationMode, setNotificationMode] = useState('rgb');
   const [saveMsg, setSaveMsg] = useState('');
   const [testMsg, setTestMsg] = useState('');
   const [testLoading, setTestLoading] = useState(null); // wasteType being tested
@@ -146,6 +147,7 @@ export default function StatusPage() {
         const match = data.find(l => l.room === config.roomName && l.name === config.lightName);
         if (match) setSelectedLightId(match.id);
       }
+      if (config.notificationMode) setNotificationMode(config.notificationMode);
     } catch (err) {
       setError('Lampen ophalen mislukt: ' + err.message);
     } finally {
@@ -167,7 +169,7 @@ export default function StatusPage() {
       const res = await fetch('/api/config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomName: light.room, lightName: light.name, lightId: light.id }),
+        body: JSON.stringify({ roomName: light.room, lightName: light.name, lightId: light.id, notificationMode }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
       setSaveMsg('Opgeslagen!');
@@ -288,14 +290,45 @@ export default function StatusPage() {
                   >
                     <option value="">— selecteer lamp —</option>
                     {lights.map(l => (
-                      <option key={l.id} value={l.id}>
-                        {l.room} / {l.name}
-                        {l.capabilities.isRgb ? ' (RGB)' : l.capabilities.hasColorTemp ? ' (wit)' : ''}
-                      </option>
+                      <option key={l.id} value={l.id}>{l.room} / {l.name}</option>
                     ))}
                   </select>
                 )}
               </div>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <span style={s.label}>Meldingsmodus</span>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                {[
+                  { value: 'rgb', label: 'RGB kleur', sub: 'Oranje / blauw / groen' },
+                  { value: 'colortemp', label: 'Warm/koel wit', sub: 'Warmst / koel / midden' },
+                  { value: 'onoff', label: 'Aan/uit', sub: 'Lamp gaat gewoon aan' },
+                ].map(opt => (
+                  <label key={opt.value} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1, minWidth: 130,
+                    padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                    border: `1.5px solid ${notificationMode === opt.value ? '#3498db' : '#ddd'}`,
+                    background: notificationMode === opt.value ? '#eaf4fb' : '#fff',
+                  }}>
+                    <input
+                      type="radio"
+                      name="notificationModeSt"
+                      value={opt.value}
+                      checked={notificationMode === opt.value}
+                      onChange={() => setNotificationMode(opt.value)}
+                      style={{ marginTop: 2, accentColor: '#3498db' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>{opt.sub}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
               <button
                 style={s.btn('primary')}
                 onClick={handleSaveLight}

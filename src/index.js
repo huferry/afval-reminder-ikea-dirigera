@@ -211,7 +211,7 @@ app.get('/api/setup/lights', async (req, res) => {
 // Save config
 app.post('/api/setup/save', async (req, res) => {
   try {
-    const { postalCode, houseNumber, hubUrl, token, roomName, lightName, lightId } = req.body;
+    const { postalCode, houseNumber, hubUrl, token, roomName, lightName, lightId, notificationMode } = req.body;
 
     if (!postalCode || !houseNumber) {
       return res.status(400).json({ error: 'postalCode and houseNumber are required' });
@@ -223,7 +223,7 @@ app.post('/api/setup/save', async (req, res) => {
       return res.status(400).json({ error: 'roomName and lightName are required' });
     }
 
-    const saved = await saveConfig({ postalCode, houseNumber, hubUrl, token, roomName, lightName, lightId: lightId || null });
+    const saved = await saveConfig({ postalCode, houseNumber, hubUrl, token, roomName, lightName, lightId: lightId || null, notificationMode: notificationMode || 'onoff' });
     res.json({ success: true, config: { ...saved, token: '***' } });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -234,11 +234,11 @@ app.post('/api/setup/save', async (req, res) => {
 app.patch('/api/config', async (req, res) => {
   try {
     const config = await loadConfig();
-    const { roomName, lightName, lightId } = req.body;
+    const { roomName, lightName, lightId, notificationMode } = req.body;
     if (!roomName || !lightName) {
       return res.status(400).json({ error: 'roomName and lightName are required' });
     }
-    const updated = await saveConfig({ ...config, roomName, lightName, lightId: lightId || null });
+    const updated = await saveConfig({ ...config, roomName, lightName, lightId: lightId || null, notificationMode: notificationMode || config.notificationMode || 'onoff' });
     res.json({ success: true, config: { ...updated, token: '***' } });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -56,39 +56,36 @@ async function activateNotification(wasteType, testMode = false) {
     lightId = light.id;
   }
 
-  // Get current device state to determine capabilities
-  const device = await getDevice(config.hubUrl, config.token, lightId);
-  const caps = getLightCapabilities(device);
   const color = COLORS[wasteType] || COLORS.other;
+  const mode = config.notificationMode || 'onoff'; // 'rgb' | 'colortemp' | 'onoff'
 
   // Build attributes to set
-  const attributes = { isOn: true };
+  const attributes = { isOn: true, lightLevel: 80 };
 
-  if (caps.isRgb) {
-    // Set hue + saturation for RGB lights
+  if (mode === 'rgb') {
     attributes.colorHue = color.hue;
     attributes.colorSaturation = color.saturation;
-    // Also set lightLevel to a reasonable brightness
-    attributes.lightLevel = 80;
-  } else if (caps.hasColorTemp) {
-    // Map waste type to color temperature
+  } else if (mode === 'colortemp') {
+    // Need device info for min/max color temp
+    const device = await getDevice(config.hubUrl, config.token, lightId);
     const attrs = device.attributes || {};
-    const minTemp = attrs.colorTemperatureMin || 2200;
-    const maxTemp = attrs.colorTemperatureMax || 6500;
-    const midTemp = Math.round((minTemp + maxTemp) / 2);
-
+    // Dirigera's colorTemperatureMin/Max labels are inverted vs Kelvin:
+    // colorTemperatureMin = 4000 (cool/high Kelvin), colorTemperatureMax = 2202 (warm/low Kelvin)
+    // Use actual Kelvin min/max to get warm (low K) and cool (high K) ends.
+    const rawA = attrs.colorTemperatureMin || 2202;
+    const rawB = attrs.colorTemperatureMax || 4000;
+    const warmTemp = Math.min(rawA, rawB); // lowest Kelvin = warmest
+    const coolTemp = Math.max(rawA, rawB); // highest Kelvin = coolest
+    const midTemp = Math.round((warmTemp + coolTemp) / 2);
     if (wasteType === 'pmd') {
-      attributes.colorTemperature = minTemp; // warmest = orange-ish
+      attributes.colorTemperature = warmTemp;
     } else if (wasteType === 'papier') {
-      attributes.colorTemperature = maxTemp; // coolest = blue-ish
+      attributes.colorTemperature = coolTemp;
     } else {
-      attributes.colorTemperature = midTemp; // middle = neutral
+      attributes.colorTemperature = midTemp;
     }
-    attributes.lightLevel = 80;
-  } else {
-    // Just turn on
-    attributes.lightLevel = 80;
   }
+  // 'onoff': just isOn + lightLevel, already set
 
   await patchDevice(config.hubUrl, config.token, lightId, attributes);
 
